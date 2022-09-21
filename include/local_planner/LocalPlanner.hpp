@@ -2,6 +2,7 @@
 #define LOCAL_PLANNER_HPP
 
 #include <ros/node_handle.h>
+#include <grid_map_core/GridMap.hpp>
 
 #include <nav_msgs/Path.h>
 #include <nav_msgs/OccupancyGrid.h>
@@ -9,7 +10,6 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
 
-#include <eigen3/Eigen/Dense>
 #include <queue>
 #include <vector>
 #include <thread>
@@ -30,7 +30,7 @@ namespace local_planner {
             ~LocalPlanner();
 
             // Run path finding simulation
-            void run(const LocalMap &map, const Odometry &odom, const Point &goal);
+            void run(const grid_map::GridMap &map, const Odometry &odom, const Point &goal);
 
             // Get best path
             void getPath(Path& path);
@@ -62,7 +62,7 @@ namespace local_planner {
             Node * buffer;
 
             // Reference to occupancy grid
-            LocalMap map;
+            const grid_map::GridMap * map;
 
             // Latest generated path
             std::vector<int> path;
@@ -88,38 +88,6 @@ namespace local_planner {
             float cost_delta_v;
             float cost_delta_u;
             float cost_reverse;   
-
-    };
-
-    class LocalMap {
-
-        public:
-
-            // Constructor
-            LocalMap();
-
-            // Destructor
-            ~LocalMap();
-
-            // Position to Index
-            void index(const float x, const float y, int& r, int& c);
-
-            // Set traversable at x,y
-            void traversable(const float x, const float y, const bool b);
-
-            // Get traversabe at x,y
-            bool traversable(const float x, const float y);
-
-        private:
-
-            // Stored map
-            bool * map;
-
-            // Parameters
-            float size_x, size_y;
-            int resolution_x, resolution_y;
-
-            int index(const int r, const int c);
 
     };
 

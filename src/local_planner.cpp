@@ -32,7 +32,7 @@ LocalPlanner::~LocalPlanner() {
 }
 
 // Run path finding simulation
-void LocalPlanner::run(const LocalMap &map, const Odometry &odom, const Point &goal) {
+void LocalPlanner::run(const grid_map::GridMap &map, const Odometry &odom, const Point &goal) {
 
     // Starting conditions
     const Point position = odom.pose.pose.position;
@@ -40,7 +40,7 @@ void LocalPlanner::run(const LocalMap &map, const Odometry &odom, const Point &g
     const Twist twist = odom.twist.twist;
     
     // Save grid
-    this->map = map;
+    this->map = &map;
 
     // Initialize start node
     Node start;
@@ -199,7 +199,8 @@ void LocalPlanner::sample(const Node& node, const int n, int &res) {
         y += v * sinf(w) * sample_time_increment;
 
         // Bounds check
-        if (map.traversable(x,y))
+        grid_map::Position position(x,y);
+        if (!(map->atPosition("traversable", position)))
             return; // return invalid response
 
         // Increase time

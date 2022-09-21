@@ -8,6 +8,9 @@
 
   <license>BSD</license>
 
-  <depend>catkin</depend>
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>grid_map_ros</depend>
+  <depend>roscpp</depend>
 
 </package>

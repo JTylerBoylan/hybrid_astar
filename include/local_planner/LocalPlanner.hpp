@@ -5,7 +5,6 @@
 #include <grid_map_core/GridMap.hpp>
 
 #include <nav_msgs/Path.h>
-#include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
@@ -58,6 +57,9 @@ namespace local_planner {
             // Sampling
             void sample(const Node& node, const int n, int &res);
 
+            // Node to pose conversion
+            geometry_msgs::Pose toPose(const Node& node);
+
             // Pointer to buffer array
             Node * buffer;
 
@@ -67,10 +69,7 @@ namespace local_planner {
             // Latest generated path
             std::vector<int> path;
 
-            // Store the iteration of the run
-            int iteration;
-
-            // Store index of highest node in buffer
+            // Store the highest node index
             int high;
 
             // Parameters
@@ -87,7 +86,8 @@ namespace local_planner {
             float cost_time;
             float cost_delta_v;
             float cost_delta_u;
-            float cost_reverse;   
+            float cost_reverse;
+            float cost_roll; 
 
     };
 

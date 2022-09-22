@@ -21,6 +21,7 @@ LocalPlanner::LocalPlanner() {
     cost_delta_v = 0.10;
     cost_delta_u = 0.05;
     cost_reverse = 0.25;
+    cost_roll = 5.0;
 
     // Create buffer
     buffer = new Node[max_iterations*sample_size + 1];
@@ -76,29 +77,20 @@ void LocalPlanner::run(const grid_map::GridMap &map, const Odometry &odom, const
     // Add start node to queue
     queue.push(0);
 
-    // Start iteration counter
-    iteration = 0;
-
-    // Track highest node index
+    // Reset high
     high = 0;
 
     // Track best node
     int best = 0;
 
     // Begin iterations
-    while (!queue.empty() && iteration < max_iterations) {
-
-        // Get node with lowest f score
-        best = queue.top();
+    for (int iter = 0; iter < max_iterations; iter++) {
 
         // Get node from buffer
         Node node = buffer[best];
 
-        // Remove from priority queue
-        queue.pop();
-
         // Goal check
-        if (sqrtf(powf(node.x - goal.x, 2.0) + powf(node.y - goal.y, 2.0)) <= goal_radius)
+        if (powf(node.x - goal.x, 2.0) + powf(node.y - goal.y, 2.0) <= goal_radius*goal_radius)
             break;
 
         // Generation check
@@ -127,8 +119,18 @@ void LocalPlanner::run(const grid_map::GridMap &map, const Odometry &odom, const
             }
         }
 
-        // Update highest index
-        high = (++iteration)*sample_size;
+        // Update highest node
+        high = (iter+1)*sample_size;
+
+        // Check if any nodes left
+        if (queue.empty())
+            break;
+
+        // Get node with lowest f score
+        best = queue.top();
+
+        // Remove from priority queue
+        queue.pop();
 
     }
 
@@ -147,17 +149,38 @@ void LocalPlanner::run(const grid_map::GridMap &map, const Odometry &odom, const
 
 // Get best path
 void LocalPlanner::getPath(Path& path) {
-    // Convert path to ros type
+    for (int i : this->path) {
+        PoseStamped pose;
+        if (map->isInside(grid_map::Position(buffer[i].x, buffer[i].y))) {
+            pose.header.stamp = ros::Time::now();
+            pose.header.frame_id = map->getFrameId();
+            pose.pose = toPose(buffer[i]);
+            path.poses.push_back(pose);
+        }
+    }
 }
 
 // Get next twist
 void LocalPlanner::getTwist(Twist& twist) {
-    // Convert first velocity/rotation instruction to ros type
+    double v = 0.0, u = 0.0;
+    if (path.size() > 1) {
+        Node next = buffer[path[1]];
+        v = next.v;
+        u = next.u;
+    }
+    twist.linear.x = v;
+    twist.linear.y = 0.0;
+    twist.linear.z = 0.0;
+    twist.angular.x = 0.0;
+    twist.angular.y = 0.0;
+    twist.angular.z = u;
 }
 
 // Get all nodes in buffer as a pose
 void LocalPlanner::getAllPoses(PoseArray &poses) {
-    // Convert all nodes in buffer to pose ros type
+    for (int i = 0; i < high; i++)
+        if (map->isInside(grid_map::Position(buffer[i].x, buffer[i].y)))
+            poses.poses.push_back(toPose(buffer[i]));
 }
 
 // H-score for a given node
@@ -188,23 +211,35 @@ void LocalPlanner::sample(const Node& node, const int n, int &res) {
     const float u = velocities[u];
 
     // Sampling time
-    float t = 0;
-    while (t < sample_time) {
+    for (float t = 0; t < sample_time; t += sample_time_increment) {
 
         // New yaw
         w += u * sample_time_increment;
 
+        // Heading vector
+        const Vector2f heading(cosf(w), sinf(w));
+
+        // Distance
+        const float distance = v * sample_time_increment;
+
         // New position
-        x += v * cosf(w) * sample_time_increment;
-        y += v * sinf(w) * sample_time_increment;
+        x += heading.x() * distance;
+        y += heading.y() * distance;
 
         // Bounds check
-        grid_map::Position position(x,y);
+        const grid_map::Position position(x,y);
         if (!(map->atPosition("traversable", position)))
             return; // return invalid response
 
-        // Increase time
-        t += sample_time_increment;
+        // Normal vector
+        const Eigen::Vector2f normal(map->atPosition("normal_x", position), map->atPosition("normal_y", position));
+
+        // Roll cost
+        const float roll = acosf(1.0 - abs(normal.x() * heading.y() + normal.y() * heading.x()));
+        g += cost_roll * roll * sample_time_increment;
+
+        // Cost map cost
+        g += map->atPosition("cost_map", position) * distance;
     }
 
     // Yaw angle wrapping, w = (-pi, pi]
@@ -212,7 +247,7 @@ void LocalPlanner::sample(const Node& node, const int n, int &res) {
         w += w > M_PI ? -2.0*M_PI : 2.0*M_PI;
 
     // Add time cost
-    g += cost_time * t;
+    g += cost_time * sample_time;
 
     // Add cost from delta v,u
     g += cost_delta_v * abs(v - node.v);
@@ -220,12 +255,29 @@ void LocalPlanner::sample(const Node& node, const int n, int &res) {
 
     // Add cost from reversing
     if (v < 0)
-        g += cost_reverse * t;
+        g += cost_reverse * sample_time;
 
     // Calculate node index (valid response)
-    res = iteration*sample_size + n + 1;
+    res = high + n + 1;
 
     // Copy into buffer
     buffer[res] = {x, y, w, v, u, g, 0.0f, res, node.i, node.t+1};
 
+}
+
+Pose LocalPlanner::toPose(const Node& node) {
+    geometry_msgs::Pose p;
+    grid_map::Position pos(node.x, node.y);
+    
+    p.position.x = node.x;
+    p.position.y = node.y;
+    p.position.z = map->atPosition("elevation", pos) + 0.05;
+
+    double sin_w2 = sin(node.w / 2.0);
+    p.orientation.x = map->atPosition("normal_x", pos) * sin_w2;
+    p.orientation.y = map->atPosition("normal_y", pos) * sin_w2;
+    p.orientation.z = map->atPosition("normal_z", pos) * sin_w2;
+    p.orientation.w = cos(node.w / 2.0);
+
+    return p;
 }

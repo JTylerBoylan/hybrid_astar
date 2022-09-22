@@ -17,6 +17,10 @@ def mat2gridmap():
     data_file = rospy.get_param("~data_file")
     frame_id = rospy.get_param("~frame_id")
     resolution = rospy.get_param("~resolution")
+    length_x = rospy.get_param("~length_x")
+    length_y = rospy.get_param("~length_y")
+    position_x = rospy.get_param("~position_x")
+    position_y = rospy.get_param("~position_y")
 
     # Get data from .mat file
     rospack = rospkg.RosPack()
@@ -47,10 +51,10 @@ def mat2gridmap():
         msg.info.header.stamp = rospy.Time.now()
         msg.info.header.frame_id = frame_id
         msg.info.resolution = resolution
-        msg.info.length_x = xlen
-        msg.info.length_y = ylen
-        msg.info.pose.position.x = 0.0
-        msg.info.pose.position.y = 0.0
+        msg.info.length_x = length_x
+        msg.info.length_y = length_y
+        msg.info.pose.position.x = position_x
+        msg.info.pose.position.y = position_y
         msg.info.pose.position.z = 0.0
         msg.info.pose.orientation.x = 0.0
         msg.info.pose.orientation.y = 0.0

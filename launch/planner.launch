@@ -1,0 +1,10 @@
+<launch>
+
+    <node name="mat2gridmap" pkg="local_planner" type="mat2gridmap.py" output="screen">
+        <param name="publish_topic" value="/map"/>
+        <param name="data_file" value="config/dataforlocalplanner.mat"/>
+        <param name="frame_id" value="map"/>
+        <param name="resolution" value="1.0"/>
+    </node>
+
+</launch>

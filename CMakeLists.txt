@@ -21,6 +21,9 @@ include_directories(
 
 add_library(${PROJECT_NAME}
    src/local_planner.cpp
-   src/mat2gridmap.cpp
+)
+
+catkin_install_python(PROGRAMS scripts/mat2gridmap.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

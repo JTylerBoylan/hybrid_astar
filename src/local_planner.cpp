@@ -211,13 +211,15 @@ void LocalPlanner::sample(const Node& node, const int n, int &res) {
     const float u = velocities[u];
 
     // Sampling time
+    Vector2f heading;
+    grid_map::Position position;
     for (float t = 0; t < sample_time; t += sample_time_increment) {
 
         // New yaw
         w += u * sample_time_increment;
 
         // Heading vector
-        const Vector2f heading(cosf(w), sinf(w));
+        heading = Vector2f(cosf(w), sinf(w));
 
         // Distance
         const float distance = v * sample_time_increment;
@@ -227,19 +229,9 @@ void LocalPlanner::sample(const Node& node, const int n, int &res) {
         y += heading.y() * distance;
 
         // Bounds check
-        const grid_map::Position position(x,y);
-        if (!(map->atPosition("traversable", position)))
+        position = grid_map::Position(x,y);
+        if (!(map->isValid(position)))
             return; // return invalid response
-
-        // Normal vector
-        const Eigen::Vector2f normal(map->atPosition("normal_x", position), map->atPosition("normal_y", position));
-
-        // Roll cost
-        const float roll = acosf(1.0 - abs(normal.x() * heading.y() + normal.y() * heading.x()));
-        g += cost_roll * roll * sample_time_increment;
-
-        // Cost map cost
-        g += map->atPosition("cost_map", position) * distance;
     }
 
     // Yaw angle wrapping, w = (-pi, pi]
@@ -256,6 +248,13 @@ void LocalPlanner::sample(const Node& node, const int n, int &res) {
     // Add cost from reversing
     if (v < 0)
         g += cost_reverse * sample_time;
+
+    // Normal vector
+    const Eigen::Vector2f normal(map->atPosition("normal_x", position), map->atPosition("normal_y", position));
+
+    // Roll cost
+    const float roll = acosf(1.0 - abs(normal.x() * heading.y() + normal.y() * heading.x()));
+    g += cost_roll * roll * sample_time_increment;
 
     // Calculate node index (valid response)
     res = high + n + 1;

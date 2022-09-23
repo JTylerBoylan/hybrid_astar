@@ -1,0 +1,24 @@
+grid_map_filters:
+
+  # Duplicate the elevation layer
+  - name: first
+    type: gridMapFilters/MockFilter
+    params:
+      processing_time: 100
+      print_name: false
+
+  # Normalize the indices
+  - name: buffer_normalizer
+    type: gridMapFilters/BufferNormalizerFilter
+      
+  # Compute surface normals
+  - name: surface_normals
+    type: gridMapFilters/NormalVectorsFilter
+    params:
+      input_layer: elevation
+      algorithm: raster
+      output_layers_prefix: normal_
+      normal_vector_positive_axis: z
+      parallelization_enabled: true
+      thread_number: 4
+

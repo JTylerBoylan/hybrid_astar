@@ -11,4 +11,9 @@
         <param name="position_y" value="0.0"/>
     </node>
 
+    <node name="map_filters" pkg="local_planner" type="map_filters">
+        <param name="input_topic" value="/map"/>
+        <param name="output_topic" value="/map/filtered"/>
+    </node>
+
 </launch>

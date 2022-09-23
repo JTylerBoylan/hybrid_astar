@@ -5,13 +5,14 @@ add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
   grid_map_ros
+  grid_map_filters
   roscpp
 )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES local_planner
-  CATKIN_DEPENDS grid_map_ros roscpp
+  CATKIN_DEPENDS grid_map_ros grid_map_filters roscpp
 )
 
 include_directories(

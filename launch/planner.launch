@@ -1,16 +1,5 @@
 <launch>
 
-    <node name="mat2gridmap" pkg="local_planner" type="mat2gridmap.py" output="screen">
-        <param name="publish_topic" value="/map"/>
-        <param name="data_file" value="config/dataforlocalplanner.mat"/>
-        <param name="frame_id" value="map"/>
-        <param name="resolution" value="1.0"/>
-        <param name="length_x" value="141"/>
-        <param name="length_y" value="141"/>
-        <param name="position_x" value="0.0"/>
-        <param name="position_y" value="0.0"/>
-    </node>
-
     <node name="map_filters" pkg="local_planner" type="map_filters">
         <param name="input_topic" value="/map"/>
         <param name="output_topic" value="/map/filtered"/>

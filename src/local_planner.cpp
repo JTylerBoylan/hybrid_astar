@@ -230,7 +230,7 @@ void LocalPlanner::sample(const Node& node, const int n, int &res) {
 
         // Bounds check
         position = grid_map::Position(x,y);
-        if (!(map->isValid(position)))
+        if (!(map->isInside(position)))
             return; // return invalid response
     }
 

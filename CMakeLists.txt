@@ -24,7 +24,6 @@ add_library(${PROJECT_NAME}
    src/local_planner.cpp
 )
 
-catkin_install_python(PROGRAMS scripts/mat2gridmap.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+add_executable(map_filters src/map_filters_node.cpp)
+target_link_libraries(map_filters ${catkin_LIBRARIES} ${PROJECT_NAME})
 

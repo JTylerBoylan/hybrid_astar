@@ -10,12 +10,12 @@ grid_map_filters:
   # Normalize the indices
   - name: buffer_normalizer
     type: gridMapFilters/BufferNormalizerFilter
-      
+
   # Compute surface normals
   - name: surface_normals
     type: gridMapFilters/NormalVectorsFilter
     params:
-      input_layer: elevation
+      input_layer: elevation_smooth
       algorithm: raster
       output_layers_prefix: normal_
       normal_vector_positive_axis: z

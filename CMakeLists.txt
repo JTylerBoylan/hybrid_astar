@@ -5,14 +5,13 @@ add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
   grid_map_ros
-  grid_map_filters
   roscpp
 )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES local_planner
-  CATKIN_DEPENDS grid_map_ros grid_map_filters roscpp
+  CATKIN_DEPENDS grid_map_ros roscpp
 )
 
 include_directories(
@@ -24,9 +23,8 @@ add_library(${PROJECT_NAME}
    src/local_planner.cpp
 )
 
-add_executable(image2map src/image2map.cpp)
-target_link_libraries(image2map ${catkin_LIBRARIES} ${PROJECT_NAME})
+catkin_install_python(PROGRAMS scripts/mat2gridmap.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
-add_executable(map_filters src/map_filters_node.cpp)
-target_link_libraries(map_filters ${catkin_LIBRARIES} ${PROJECT_NAME})
 

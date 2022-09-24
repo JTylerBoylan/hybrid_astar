@@ -1,24 +1,14 @@
 <launch>
 
-    <node name="image2map" pkg="local_planner" type="image2map" output="screen">
-        <param name="map_topic" value="/map"/>
-        <param name="map_frame_id" value="map"/>
-        <param name="elevation_image_topic" value="/map/image/elevation"/>
-        <param name="elevation_min_value" value="0.0"/>
-        <param name="elevation_max_value" value="59.2493"/>
-        <param name="temperature_image_topic" value="/map/image/temperature"/>
-        <param name="temperature_min_value" value="0.0047"/>
-        <param name="temperature_max_value" value="0.6452"/>
+    <node name="mat2gridmap" pkg="local_planner" type="mat2gridmap.py" output="screen">
+        <param name="publish_topic" value="/map"/>
+        <param name="data_file" value="data/dataforlocalplanner.mat"/>
+        <param name="frame_id" value="map"/>
         <param name="resolution" value="1.0"/>
-        <param name="center_x" value="1.0"/>
-        <param name="center_y" value="1.0"/>
+        <param name="length_x" value="141"/>
+        <param name="length_y" value="141"/>
+        <param name="position_x" value="0.0"/>
+        <param name="position_y" value="0.0"/>
     </node>
-
-    <node name="map_filters" pkg="local_planner" type="map_filters" output="screen">
-        <param name="input_topic" value="/map"/>
-        <param name="output_topic" value="/map/filtered"/>
-    </node>
-
-    <node name="grid_map_visualization" pkg="grid_map_visualization" type="grid_map_visualization" output="screen"/>
 
 </launch>

@@ -16,6 +16,8 @@
 using namespace nav_msgs;
 using namespace geometry_msgs;
 
+#define GRAVITY 9.81
+
 namespace planner {
 
     class Planner {
@@ -54,6 +56,10 @@ namespace planner {
             // H-score for a given node
             float h(const Node &node, const Point &goal);
 
+            // G-score increment for a given sample
+            float dg(const float dt, const float v, const float u, const float dv, const float du, 
+                const float dz, const float T, const float dT);
+
             // Sampling
             void sample(const Node& node, const int n, int &res);
 
@@ -83,11 +89,17 @@ namespace planner {
             float goal_radius;
             float sample_time;
             float sample_time_increment;
-            float cost_time;
-            float cost_delta_v;
-            float cost_delta_u;
-            float cost_reverse;
-            float cost_roll; 
+            float body_mass;
+            float body_moment;
+            float drag_force;
+            float forward_factor;
+            float reverse_factor;
+            float uphill_factor;
+            float downhill_factor;
+            float acceleration_factor;
+            float decceleration_factor;
+            float rotational_factor;
+            
 
     };
 

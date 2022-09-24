@@ -7,21 +7,35 @@ using namespace Eigen;
 Planner::Planner() {
 
     // Set parameters
-    max_iterations = 10000;
-    max_generations = 10;
-    sample_size = 4;
-    velocities = {0.75, 1.0, 0.75, -1.0};
-    rotations = {M_PI / 16.0, 0.0, -M_PI / 16.0, 0.0};
+    max_iterations = 100000;
+    max_generations = 100;
+    sample_size = 3;
+
+    velocities = {0.75, 1.0, 0.75}; // m/s
+    rotations = {M_PI / 60.0, 0.0, -M_PI / 60.0}; // rad/s
     max_velocity = 1.0;
-    max_rotation = M_PI / 16.0;
-    goal_radius = 1.0;
-    sample_time = 0.5;
-    sample_time_increment = 0.1;
-    cost_time = 1.0;
-    cost_delta_v = 0.10;
-    cost_delta_u = 0.05;
-    cost_reverse = 0.25;
-    cost_roll = 5.0;
+    max_rotation = M_PI / 60.0;
+
+    goal_radius = 10.0; // m
+
+    sample_time = 10.0; // s
+    sample_time_increment = 1.0;
+
+    body_mass = 10; // kg
+    body_moment = 0.5; // kg m^2
+
+    drag_force = 10; // J/m
+
+    forward_factor = 1.0;
+    reverse_factor = 2.0;
+
+    uphill_factor = 1.0;
+    downhill_factor = 0.25;
+
+    acceleration_factor = 1.0;
+    decceleration_factor = 0.25;
+    rotational_factor = 1.0;
+
 
     // Create buffer
     buffer = new Node[max_iterations*sample_size + 1];
@@ -39,7 +53,7 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
     const Point position = odom.pose.pose.position;
     const geometry_msgs::Quaternion orientation = odom.pose.pose.orientation;
     const Twist twist = odom.twist.twist;
-    
+
     // Save grid
     this->map = &map;
 
@@ -73,9 +87,6 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
     // Initialize priority queue
     std::priority_queue<int, std::vector<int>, const std::function<bool(int, int)>> queue =
         std::priority_queue<int, std::vector<int>, const std::function<bool(int, int)>>(comp);
-
-    // Add start node to queue
-    queue.push(0);
 
     // Reset high
     high = 0;
@@ -193,13 +204,31 @@ void Planner::getAllPoses(PoseArray &poses) {
 
 // H-score for a given node
 float Planner::h(const Node &node, const Point &goal) {
-    float dx, dy, dw;
-    dx = goal.x - node.x;
-    dy = goal.y - node.y;
-    dw = atan2f(dy,dx) - node.w;
+    const float dx = goal.x - node.x;
+    const float dy = goal.y - node.y;
+    float dw = atan2f(dy,dx) - node.w;
     if (dw > M_PI || dw <= -M_PI)
         dw += dw > M_PI ? -2.0f*M_PI : 2.0*M_PI;
-    return (sqrtf(dx*dx + dy*dy)/max_velocity + abs(dw)/max_rotation) * cost_time;
+    const float dt = sqrtf(dx*dx + dy*dy)/max_velocity + abs(dw)/max_rotation;
+    const float dz = map->atPosition("elevation", grid_map::Position(goal.x, goal.y)) -
+                map->atPosition("elevation", grid_map::Position(node.x, node.y));
+    return dg(dt, max_velocity, max_rotation, 0.0f, 0.0f, dz, 0.0f, 0.0f);
+}
+
+// G-score increment for a given sample
+float Planner::dg(const float dt, const float v, const float u, const float dv, const float du, 
+                    const float dz, const float T, const float dT) {
+
+    const float direction_factor = v > 0 ? forward_factor : reverse_factor;
+    const float potential_factor = dz > 0 ? uphill_factor : downhill_factor;
+    const float accel_factor = dv > 0 ? acceleration_factor : decceleration_factor;
+
+    const float drag_energy = drag_force * abs(v) * dt * direction_factor;
+    const float potential_energy = body_mass * GRAVITY * abs(dz) * potential_factor;
+    const float kinetic_energy = body_mass * abs(v) * abs(dv) * accel_factor;
+    const float rotation_energy = body_moment * abs(u) * abs(du) * rotational_factor;
+
+    return drag_energy + potential_energy + kinetic_energy + rotation_energy;
 }
 
 // Sampling
@@ -207,6 +236,9 @@ void Planner::sample(const Node& node, const int n, int &res) {
 
     // Set response to 0 (invalid)
     res = 0;
+
+    // Save position
+    const grid_map::Position position0(node.x, node.y);
 
     // Copy node values
     float x = node.x;
@@ -216,7 +248,7 @@ void Planner::sample(const Node& node, const int n, int &res) {
 
     // Get sample velocity and rotation
     const float v = velocities[n];
-    const float u = velocities[u];
+    const float u = rotations[n];
 
     // Sampling time
     Vector2f heading;
@@ -246,16 +278,12 @@ void Planner::sample(const Node& node, const int n, int &res) {
     if (w > M_PI || w <= -M_PI)
         w += w > M_PI ? -2.0*M_PI : 2.0*M_PI;
 
-    // Add time cost
-    g += cost_time * sample_time;
+    const float z0 = map->atPosition("elevation", position0);
+    const float z1 = map->atPosition("elevation", position);
+    const float T0 = map->atPosition("temperature", position0);
+    const float T1 = map->atPosition("temperature", position);
 
-    // Add cost from delta v,u
-    g += cost_delta_v * abs(v - node.v);
-    g += cost_delta_u * abs(u - node.u);
-
-    // Add cost from reversing
-    if (v < 0)
-        g += cost_reverse * sample_time;
+    g += dg(sample_time, v, u, v - node.v, u - node.u, z1 - z0, T1, T1 - T0);
 
     // Calculate node index (valid response)
     res = high + n + 1;
@@ -276,7 +304,7 @@ Pose Planner::toPose(const Node& node) {
     double sin_w2 = sin(node.w / 2.0);
     p.orientation.x = 0.0;
     p.orientation.y = 0.0;
-    p.orientation.z = 0.0;
+    p.orientation.z = sin_w2;
     p.orientation.w = cos(node.w / 2.0);
 
     return p;

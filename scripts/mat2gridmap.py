@@ -36,8 +36,8 @@ def mat2gridmap():
     ylen = len(ydata)
 
     # Format data
-    zdataList = [float(i) for i in np.reshape(zdata, xlen*ylen).tolist()]
-    tdataList = [float(i) for i in np.reshape(tdata, xlen*ylen).tolist()]
+    zdataList = np.array(zdata).flatten('F')
+    tdataList = np.array(tdata).flatten('F')
 
     # Create rostopic variables
     pub = rospy.Publisher(pub_topic, GridMap, queue_size=10)
@@ -63,6 +63,7 @@ def mat2gridmap():
 
         # Layers
         msg.layers = ['elevation', 'temperature']
+        msg.basic_layers = ['elevation']
         msg.data.clear()
 
         dataArrayZ = Float32MultiArray()
@@ -70,7 +71,7 @@ def mat2gridmap():
 
         dim0Z = MultiArrayDimension()
         dim0Z.label = "column_index"
-        dim0Z.stride = xlen*xlen
+        dim0Z.stride = xlen*ylen
         dim0Z.size = xlen
 
         dim1Z = MultiArrayDimension()

@@ -49,18 +49,24 @@ int main (int argc, char ** argv) {
     ros::Publisher pub_path = node.advertise<nav_msgs::Path>(path_topic, 1, true);
     ros::Publisher pub_twist = node.advertise<Twist>(twist_topic, 1, true);
 
+    bool map_init = false, odom_init = false, goal_init = false;
+
     float t, tt = 0;
     int n = 0;
 
     auto mapUpdate = [&](const grid_map_msgs::GridMap::ConstPtr& grid_msg) {
+        if (!map_init) map_init = true;
         GridMapRosConverter::fromMessage(*grid_msg, grid);
     };
 
     auto odomUpdate = [&](const nav_msgs::Odometry::ConstPtr& odom_msg) {
+        if (!odom_init) odom_init = true;
         odom = *odom_msg;
+
     };
 
     auto goalUpdate = [&](const PointStamped::ConstPtr& goal_msg) {
+        if (!goal_init) goal_init = true;
         goal = goal_msg->point;
     };
 
@@ -70,6 +76,11 @@ int main (int argc, char ** argv) {
 
     ros::Rate rate(publish_rate);
     while (node.ok()) {
+
+        ros::spinOnce();
+
+        if (!map_init || !goal_init || !odom_init)
+            continue;
 
         clock_t cstart, cend;
 
@@ -108,7 +119,6 @@ int main (int argc, char ** argv) {
         }
 
         rate.sleep();
-        ros::spinOnce();
     }
 
     return 0;

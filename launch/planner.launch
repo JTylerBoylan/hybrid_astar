@@ -19,25 +19,25 @@
         <param name="pz" value="0"/>
         <param name="ox" value="0"/>
         <param name="oy" value="0"/>
-        <param name="oz" value="0"/>
-        <param name="ow" value="1"/>
+        <param name="oz" value="0.3827"/>
+        <param name="ow" value="0.9239"/>
         <param name="v" value="0"/>
         <param name="u" value="0"/>
     </node>
 
     <node name="goal_point" pkg="hybrid_astar" type="goal_point.py" output="screen">
         <param name="frame_id" value="map"/>
-        <param name="goal_topic" value="/goal"/>
-        <param name="x" value="70"/>
-        <param name="y" value="70"/>
-        <param name="z" value="35"/>
+        <param name="goal_topic" value="/goal_point"/>
+        <param name="x" value="140"/>
+        <param name="y" value="140"/>
+        <param name="z" value="0"/>
     </node>
 
     <node name="planner" pkg="hybrid_astar" type="planner" output="screen"> 
         <param name="publish_all" value="true"/>
         <param name="map_topic" value="/map"/>
         <param name="odom_topic" value="/odom"/>
-        <param name="goal_topic" value="/goal"/>
+        <param name="goal_topic" value="/goal_point"/>
         <param name="path_topic" value="/path"/>
         <param name="poses_topic" value="/poses"/>
         <param name="twist_topic" value="/twist"/>

@@ -25,21 +25,21 @@ int main (int argc, char ** argv) {
   node.getParam("input_topic", input_topic);
   node.getParam("output_topic", output_topic);
 
+  GridMap map;
+
   ros::Publisher map_pub = node.advertise<grid_map_msgs::GridMap>(output_topic, 10, true);
 
   auto mapCallback = [&](const grid_map_msgs::GridMapConstPtr &msg_in) {
 
-    GridMap map_in;
-    GridMap map_out;
+    GridMap map_in, map_out;
 
     GridMapRosConverter::fromMessage(*msg_in, map_in);
 
-    if (!filterChain.update(map_in, map_out)) {
+    if (!filterChain.update(map, map_out)) {
       ROS_ERROR("Could not update the grid map filter chain!");
       return;
     }
 
-    map_out.setTimestamp(ros::Time::now().toNSec());
     grid_map_msgs::GridMap msg_out;
     GridMapRosConverter::toMessage(map_out, msg_out);
 

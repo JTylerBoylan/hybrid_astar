@@ -24,6 +24,9 @@ add_library(${PROJECT_NAME}
    src/local_planner.cpp
 )
 
+add_executable(image2map src/image2map.cpp)
+target_link_libraries(image2map ${catkin_LIBRARIES} ${PROJECT_NAME})
+
 add_executable(map_filters src/map_filters_node.cpp)
 target_link_libraries(map_filters ${catkin_LIBRARIES} ${PROJECT_NAME})
 

@@ -16,8 +16,6 @@
 using namespace nav_msgs;
 using namespace geometry_msgs;
 
-#define GRAVITY 9.81
-
 namespace planner {
 
     class Planner {
@@ -94,6 +92,7 @@ namespace planner {
             float drag_force;
             float forward_factor;
             float reverse_factor;
+            float gravity_force;
             float uphill_factor;
             float downhill_factor;
             float acceleration_factor;

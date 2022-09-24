@@ -14,12 +14,12 @@
     <node name="odometry" pkg="hybrid_astar" type="odometry.py" output="screen">
         <param name="frame_id" value="map"/>
         <param name="odom_topic" value="/odom"/>
-        <param name="px" value="0"/>
-        <param name="py" value="0"/>
+        <param name="px" value="122"/>
+        <param name="py" value="20"/>
         <param name="pz" value="0"/>
         <param name="ox" value="0"/>
         <param name="oy" value="0"/>
-        <param name="oz" value="0.3827"/>
+        <param name="oz" value="-0.3827"/>
         <param name="ow" value="0.9239"/>
         <param name="v" value="0"/>
         <param name="u" value="0"/>
@@ -28,8 +28,8 @@
     <node name="goal_point" pkg="hybrid_astar" type="goal_point.py" output="screen">
         <param name="frame_id" value="map"/>
         <param name="goal_topic" value="/goal_point"/>
-        <param name="x" value="140"/>
-        <param name="y" value="140"/>
+        <param name="x" value="77"/>
+        <param name="y" value="65"/>
         <param name="z" value="0"/>
     </node>
 

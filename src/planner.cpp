@@ -22,12 +22,14 @@ Planner::Planner() {
     sample_time_increment = 1.0;
 
     body_mass = 10; // kg
-    body_moment = 0.5; // kg m^2
+    body_moment = 100; // kg m^2
 
     drag_force = 10; // J/m
 
     forward_factor = 1.0;
     reverse_factor = 2.0;
+
+    gravity_force = 10; // J/m
 
     uphill_factor = 1.0;
     downhill_factor = 0.25;
@@ -224,7 +226,7 @@ float Planner::dg(const float dt, const float v, const float u, const float dv, 
     const float accel_factor = dv > 0 ? acceleration_factor : decceleration_factor;
 
     const float drag_energy = drag_force * abs(v) * dt * direction_factor;
-    const float potential_energy = body_mass * GRAVITY * abs(dz) * potential_factor;
+    const float potential_energy = gravity_force * abs(dz) * potential_factor;
     const float kinetic_energy = body_mass * abs(v) * abs(dv) * accel_factor;
     const float rotation_energy = body_moment * abs(u) * abs(du) * rotational_factor;
 
@@ -299,7 +301,7 @@ Pose Planner::toPose(const Node& node) {
     
     p.position.x = node.x;
     p.position.y = node.y;
-    p.position.z = map->atPosition("elevation", pos) + 0.05;
+    p.position.z = map->atPosition("elevation", pos) + 2.0;
 
     double sin_w2 = sin(node.w / 2.0);
     p.orientation.x = 0.0;

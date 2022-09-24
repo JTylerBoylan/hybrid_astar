@@ -80,8 +80,8 @@ Visualization Manager:
       Class: rviz/Path
       Color: 0; 0; 0
       Enabled: true
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
+      Head Diameter: 2
+      Head Length: 2
       Length: 0.30000001192092896
       Line Style: Lines
       Line Width: 0.10000000149011612
@@ -90,12 +90,12 @@ Visualization Manager:
         X: 0
         Y: 0
         Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
+      Pose Color: 0; 0; 0
+      Pose Style: Arrows
       Queue Size: 10
       Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
+      Shaft Diameter: 1
+      Shaft Length: 3
       Topic: /path
       Unreliable: false
       Value: true
@@ -164,7 +164,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 43.819026947021484
+      Distance: 169.72897338867188
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -172,17 +172,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 16.3962345123291
-        Y: 12.381103515625
-        Z: -22.63313865661621
+        X: 70.52393341064453
+        Y: 70.44573974609375
+        Z: 5.285429000854492
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9503984451293945
+      Pitch: 1.0297964811325073
       Target Frame: <Fixed Frame>
-      Yaw: 3.7735843658447266
+      Yaw: 6.243584156036377
     Saved: ~
 Window Geometry:
   Displays:

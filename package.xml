@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>local_planner</name>
-  <version>0.0.0</version>
-  <description>Local Planner</description>
+  <name>hybrid_astar</name>
+  <version>1.0.0</version>
+  <description>Hybrid A* Planner</description>
 
   <maintainer email="jboylan@fsu.edu">Jonathan T. Boylan</maintainer>
 
@@ -12,5 +12,6 @@
 
   <depend>grid_map_ros</depend>
   <depend>roscpp</depend>
+  <depend>nav_msgs</depend>
 
 </package>

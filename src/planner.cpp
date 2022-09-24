@@ -1,10 +1,10 @@
-#include <local_planner/LocalPlanner.hpp>
+#include <hybrid_astar/Planner.hpp>
 
-using namespace local_planner;
+using namespace planner;
 using namespace Eigen;
 
 // Constructor
-LocalPlanner::LocalPlanner() {
+Planner::Planner() {
 
     // Set parameters
     max_iterations = 10000;
@@ -28,12 +28,12 @@ LocalPlanner::LocalPlanner() {
 }
 
 // Destructor
-LocalPlanner::~LocalPlanner() {
+Planner::~Planner() {
     delete[] buffer;
 }
 
 // Run path finding simulation
-void LocalPlanner::run(const grid_map::GridMap &map, const Odometry &odom, const Point &goal) {
+void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Point &goal) {
 
     // Starting conditions
     const Point position = odom.pose.pose.position;
@@ -105,7 +105,7 @@ void LocalPlanner::run(const grid_map::GridMap &map, const Odometry &odom, const
 
         // Run threads
         for (int n = 0; n < sample_size; n++)
-            threads[n] = std::thread(&LocalPlanner::sample, this, std::ref(node), n, std::ref(response[n]));
+            threads[n] = std::thread(&Planner::sample, this, std::ref(node), n, std::ref(response[n]));
 
         // Close threads
         for (int n = 0; n < sample_size; n++) {
@@ -144,11 +144,19 @@ void LocalPlanner::run(const grid_map::GridMap &map, const Odometry &odom, const
     // Reverse so path is ordered start -> best
     std::reverse(path.begin(),path.end());
 
+    // Print path
+    ROS_INFO("--- PATH ---");
+    for (int idx : path) {
+        const Node node = buffer[idx];
+        ROS_INFO("[%i] (x: %.2f, y: %.2f, w: %.2f) (v: %.2f, u: %.2f) (g: %.2f, h: %.2f, f: %.2f)",
+                idx, node.x, node.y, node.w, node.v, node.u, node.g, h(node, goal), node.f);
+    }
+
     // End of run function
 }
 
 // Get best path
-void LocalPlanner::getPath(Path& path) {
+void Planner::getPath(Path& path) {
     for (int i : this->path) {
         PoseStamped pose;
         if (map->isInside(grid_map::Position(buffer[i].x, buffer[i].y))) {
@@ -161,7 +169,7 @@ void LocalPlanner::getPath(Path& path) {
 }
 
 // Get next twist
-void LocalPlanner::getTwist(Twist& twist) {
+void Planner::getTwist(Twist& twist) {
     double v = 0.0, u = 0.0;
     if (path.size() > 1) {
         Node next = buffer[path[1]];
@@ -177,14 +185,14 @@ void LocalPlanner::getTwist(Twist& twist) {
 }
 
 // Get all nodes in buffer as a pose
-void LocalPlanner::getAllPoses(PoseArray &poses) {
+void Planner::getAllPoses(PoseArray &poses) {
     for (int i = 0; i < high; i++)
         if (map->isInside(grid_map::Position(buffer[i].x, buffer[i].y)))
             poses.poses.push_back(toPose(buffer[i]));
 }
 
 // H-score for a given node
-float LocalPlanner::h(const Node &node, const Point &goal) {
+float Planner::h(const Node &node, const Point &goal) {
     float dx, dy, dw;
     dx = goal.x - node.x;
     dy = goal.y - node.y;
@@ -195,7 +203,7 @@ float LocalPlanner::h(const Node &node, const Point &goal) {
 }
 
 // Sampling
-void LocalPlanner::sample(const Node& node, const int n, int &res) {
+void Planner::sample(const Node& node, const int n, int &res) {
 
     // Set response to 0 (invalid)
     res = 0;
@@ -249,13 +257,6 @@ void LocalPlanner::sample(const Node& node, const int n, int &res) {
     if (v < 0)
         g += cost_reverse * sample_time;
 
-    // Normal vector
-    const Eigen::Vector2f normal(map->atPosition("normal_x", position), map->atPosition("normal_y", position));
-
-    // Roll cost
-    const float roll = acosf(1.0 - abs(normal.x() * heading.y() + normal.y() * heading.x()));
-    g += cost_roll * roll * sample_time_increment;
-
     // Calculate node index (valid response)
     res = high + n + 1;
 
@@ -264,7 +265,7 @@ void LocalPlanner::sample(const Node& node, const int n, int &res) {
 
 }
 
-Pose LocalPlanner::toPose(const Node& node) {
+Pose Planner::toPose(const Node& node) {
     geometry_msgs::Pose p;
     grid_map::Position pos(node.x, node.y);
     
@@ -273,9 +274,9 @@ Pose LocalPlanner::toPose(const Node& node) {
     p.position.z = map->atPosition("elevation", pos) + 0.05;
 
     double sin_w2 = sin(node.w / 2.0);
-    p.orientation.x = map->atPosition("normal_x", pos) * sin_w2;
-    p.orientation.y = map->atPosition("normal_y", pos) * sin_w2;
-    p.orientation.z = map->atPosition("normal_z", pos) * sin_w2;
+    p.orientation.x = 0.0;
+    p.orientation.y = 0.0;
+    p.orientation.z = 0.0;
     p.orientation.w = cos(node.w / 2.0);
 
     return p;

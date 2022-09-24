@@ -1,7 +1,7 @@
-#ifndef LOCAL_PLANNER_HPP
-#define LOCAL_PLANNER_HPP
+#ifndef PLANNER_HPP
+#define PLANNER_HPP
 
-#include <ros/node_handle.h>
+#include <ros/ros.h>
 #include <grid_map_core/GridMap.hpp>
 
 #include <nav_msgs/Path.h>
@@ -16,17 +16,17 @@
 using namespace nav_msgs;
 using namespace geometry_msgs;
 
-namespace local_planner {
+namespace planner {
 
-    class LocalPlanner {
+    class Planner {
 
         public:
 
             // Constructor
-            LocalPlanner();
+            Planner();
 
             // Destructor
-            ~LocalPlanner();
+            ~Planner();
 
             // Run path finding simulation
             void run(const grid_map::GridMap &map, const Odometry &odom, const Point &goal);

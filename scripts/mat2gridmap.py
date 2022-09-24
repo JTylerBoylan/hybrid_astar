@@ -24,7 +24,7 @@ def mat2gridmap():
 
     # Get data from .mat file
     rospack = rospkg.RosPack()
-    path = rospack.get_path("local_planner")
+    path = rospack.get_path("hybrid_astar")
     data = loadmat(path + "/" + data_file)['dataforlocalplanner']
     xdata = data[0][0]['X']
     ydata = data[0][0]['Y']

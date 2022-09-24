@@ -1,0 +1,11 @@
+grid_map_visualization:
+  grid_map_topic: /map
+  grid_map_visualizations:
+    - name: elevation_points
+      type: point_cloud
+      params:
+        layer: elevation
+    - name: flat_grid
+      type: flat_point_cloud
+      params:
+        height: 0.0

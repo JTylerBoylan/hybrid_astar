@@ -49,7 +49,7 @@ Planner::~Planner() {
 }
 
 // Run path finding simulation
-void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Point &goal) {
+void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Point &point) {
 
     // Starting conditions
     const Point position = odom.pose.pose.position;
@@ -58,6 +58,7 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
 
     // Save grid
     this->map = &map;
+    this->goal = point;
 
     // Initialize start node
     Node start;
@@ -78,7 +79,7 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
     start.u = twist.angular.z;
 
     start.g = 0.0f;
-    start.f = h(start, goal);
+    start.f = h(start);
 
     // Insert start node into buffer
     buffer[0] = start;
@@ -110,40 +111,12 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
         if (node.t > max_generations)
             break;
 
-        // Create new threads for sampling
-        // std::thread threads[sample_size];
-
-        // Thread response integers
-        int response[sample_size];
-
-        /*
-        THREADING
-        // Run threads
-        for (int n = 0; n < sample_size; n++)
-            threads[n] = std::thread(&Planner::sample, this, std::ref(node), n, std::ref(response[n]));
-
-        // Close threads
+        // Run sampling
         for (int n = 0; n < sample_size; n++) {
-            // Wait for thread to finish
-            threads[n].join();
-            int idx = response[n];
-            if (idx) {
-                // If valid response, recalculate f and add to queue
-                buffer[idx].f = buffer[idx].g + h(buffer[idx], goal);
-                queue.push(idx);
-            }
+            int response = sample(node, n);
+            if (response)
+                queue.push(response);
         }
-        */
-
-       // Not threading is faster than threading
-       for (int n = 0; n < sample_size; n++) {
-            sample(node,n,response[n]);
-            int idx = response[n];
-            if (idx) {
-                buffer[idx].f = buffer[idx].g + h(buffer[idx], goal);
-                queue.push(idx);
-            }
-       }
 
         // Update highest node
         high = (iter+1)*sample_size;
@@ -175,7 +148,7 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
     for (int idx : path) {
         const Node node = buffer[idx];
         ROS_INFO("[%i] (x: %.2f, y: %.2f, w: %.2f) (v: %.2f, u: %.2f) (g: %.2f, h: %.2f, f: %.2f)",
-                idx, node.x, node.y, node.w, node.v, node.u, node.g, h(node, goal), node.f);
+                idx, node.x, node.y, node.w, node.v, node.u, node.g, h(node), node.f);
     }
 
     // End of run function
@@ -218,7 +191,7 @@ void Planner::getAllPoses(PoseArray &poses) {
 }
 
 // H-score for a given node
-float Planner::h(const Node &node, const Point &goal) {
+float Planner::h(const Node &node) {
     const float dx = goal.x - node.x;
     const float dy = goal.y - node.y;
     float dw = atan2f(dy,dx) - node.w;
@@ -247,10 +220,7 @@ float Planner::dg(const float dt, const float v, const float u, const float dv, 
 }
 
 // Sampling
-void Planner::sample(const Node& node, const int n, int &res) {
-
-    // Set response to 0 (invalid)
-    res = 0;
+int Planner::sample(const Node& node, const int n) {
 
     // Save position
     const grid_map::Position position0(node.x, node.y);
@@ -279,7 +249,7 @@ void Planner::sample(const Node& node, const int n, int &res) {
         // Bounds check
         position = grid_map::Position(x,y);
         if (!(map->isInside(position)))
-            return; // return invalid response
+            return 0; // return invalid response
     }
 
     // Yaw angle wrapping, w = (-pi, pi]
@@ -294,11 +264,15 @@ void Planner::sample(const Node& node, const int n, int &res) {
     g += dg(sample_time, v, u, v - node.v, u - node.u, z1 - z0, T1, T1 - T0);
 
     // Calculate node index (valid response)
-    res = high + n + 1;
+    int res = high + n + 1;
 
     // Copy into buffer
     buffer[res] = {x, y, w, v, u, g, 0.0f, res, node.i, node.t+1};
 
+    // Calculate F score
+    buffer[res].f = g + h(buffer[res]);
+
+    return res;
 }
 
 Pose Planner::toPose(const Node& node) {

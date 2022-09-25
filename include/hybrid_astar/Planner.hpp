@@ -12,6 +12,7 @@
 #include <queue>
 #include <vector>
 #include <thread>
+#include <future>
 
 using namespace nav_msgs;
 using namespace geometry_msgs;
@@ -52,14 +53,14 @@ namespace planner {
             };
 
             // H-score for a given node
-            float h(const Node &node, const Point &goal);
+            float h(const Node &node);
 
             // G-score increment for a given sample
             float dg(const float dt, const float v, const float u, const float dv, const float du, 
                 const float dz, const float T, const float dT);
 
             // Sampling
-            void sample(const Node& node, const int n, int &res);
+            int sample(const Node& node, const int n);
 
             // Node to pose conversion
             geometry_msgs::Pose toPose(const Node& node);
@@ -69,6 +70,9 @@ namespace planner {
 
             // Reference to occupancy grid
             const grid_map::GridMap * map;
+
+            // Goal point
+            Point goal;
 
             // Latest generated path
             std::vector<int> path;

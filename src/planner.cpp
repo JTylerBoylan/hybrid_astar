@@ -253,22 +253,15 @@ void Planner::sample(const Node& node, const int n, int &res) {
     const float u = rotations[n];
 
     // Sampling time
-    Vector2f heading;
     grid_map::Position position;
     for (float t = 0; t < sample_time; t += sample_time_increment) {
 
         // New yaw
         w += u * sample_time_increment;
 
-        // Heading vector
-        heading = Vector2f(cosf(w), sinf(w));
-
-        // Distance
-        const float distance = v * sample_time_increment;
-
         // New position
-        x += heading.x() * distance;
-        y += heading.y() * distance;
+        x += cosf(w) * v * sample_time_increment;
+        y += sinf(w) * v * sample_time_increment;
 
         // Bounds check
         position = grid_map::Position(x,y);

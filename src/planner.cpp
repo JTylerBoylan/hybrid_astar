@@ -111,11 +111,13 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
             break;
 
         // Create new threads for sampling
-        std::thread threads[sample_size];
+        // std::thread threads[sample_size];
 
         // Thread response integers
         int response[sample_size];
 
+        /*
+        THREADING
         // Run threads
         for (int n = 0; n < sample_size; n++)
             threads[n] = std::thread(&Planner::sample, this, std::ref(node), n, std::ref(response[n]));
@@ -131,6 +133,17 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
                 queue.push(idx);
             }
         }
+        */
+
+       // Not threading is faster than threading
+       for (int n = 0; n < sample_size; n++) {
+            sample(node,n,response[n]);
+            int idx = response[n];
+            if (idx) {
+                buffer[idx].f = buffer[idx].g + h(buffer[idx], goal);
+                queue.push(idx);
+            }
+       }
 
         // Update highest node
         high = (iter+1)*sample_size;

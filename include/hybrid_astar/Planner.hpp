@@ -11,8 +11,6 @@
 
 #include <queue>
 #include <vector>
-#include <thread>
-#include <future>
 
 using namespace nav_msgs;
 using namespace geometry_msgs;

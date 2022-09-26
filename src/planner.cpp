@@ -113,7 +113,7 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
 
         // Run sampling
         for (int n = 0; n < sample_size; n++) {
-            int response = sample(node, n);
+            const int response = sample(node, n);
             if (response)
                 queue.push(response);
         }
@@ -171,7 +171,7 @@ void Planner::getPath(Path& path) {
 void Planner::getTwist(Twist& twist) {
     double v = 0.0, u = 0.0;
     if (path.size() > 1) {
-        Node next = buffer[path[1]];
+        const Node next = buffer[path[1]];
         v = next.v;
         u = next.u;
     }
@@ -264,7 +264,7 @@ int Planner::sample(const Node& node, const int n) {
     g += dg(sample_time, v, u, v - node.v, u - node.u, z1 - z0, T1, T1 - T0);
 
     // Calculate node index (valid response)
-    int res = high + n + 1;
+    const int res = high + n + 1;
 
     // Copy into buffer
     buffer[res] = {x, y, w, v, u, g, 0.0f, res, node.i, node.t+1};
@@ -277,13 +277,13 @@ int Planner::sample(const Node& node, const int n) {
 
 Pose Planner::toPose(const Node& node) {
     geometry_msgs::Pose p;
-    grid_map::Position pos(node.x, node.y);
+    const grid_map::Position pos(node.x, node.y);
     
     p.position.x = node.x;
     p.position.y = node.y;
     p.position.z = map->atPosition("elevation", pos) + 2.0;
 
-    double sin_w2 = sin(node.w / 2.0);
+    const double sin_w2 = sin(node.w / 2.0);
     p.orientation.x = 0.0;
     p.orientation.y = 0.0;
     p.orientation.z = sin_w2;

@@ -6,6 +6,10 @@
 ```
 sudo apt-get install ros-noetic-grid-map
 ```
+### Eigen
+```
+sudo apt-get install libeigen3-dev
+```
 
 ## Installation
 ### In `catkin_ws/src`

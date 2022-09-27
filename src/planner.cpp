@@ -38,6 +38,15 @@ Planner::Planner() {
     decceleration_factor = 0.25;
     rotational_factor = 1.0;
 
+    heat_transfer = 1e-10f;
+
+    hot_factor = 100.0;
+    cool_factor = 1000.0;
+
+    desired_temperature = 300;
+    initial_temperature = 300;
+
+    solar_temperature = 400;
 
     // Create buffer
     buffer = new Node[max_iterations*sample_size + 1];
@@ -65,7 +74,8 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
     
     start.i = 0;
     start.p = -1;
-    start.t = 0;
+    start.G = 0;
+    start.t = 0.0f;
 
     start.x = float(position.x);
     start.y = float(position.y);
@@ -80,6 +90,8 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
 
     start.g = 0.0f;
     start.f = h(start);
+
+    start.T = initial_temperature;
 
     // Insert start node into buffer
     buffer[0] = start;
@@ -108,7 +120,7 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
             break;
 
         // Generation check
-        if (node.t > max_generations)
+        if (node.G > max_generations)
             break;
 
         // Run sampling
@@ -147,8 +159,8 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
     ROS_INFO("--- PATH ---");
     for (int idx : path) {
         const Node node = buffer[idx];
-        ROS_INFO("[%i] (x: %.2f, y: %.2f, w: %.2f) (v: %.2f, u: %.2f) (g: %.2f, h: %.2f, f: %.2f)",
-                idx, node.x, node.y, node.w, node.v, node.u, node.g, h(node), node.f);
+        ROS_INFO("[%i] (x: %.2f, y: %.2f, w: %.2f) (v: %.2f, u: %.2f) (g: %.2f, h: %.2f, f: %.2f) (T: %.2f)",
+                idx, node.x, node.y, node.w, node.v, node.u, node.g, h(node), node.f, node.T);
     }
 
     // End of run function
@@ -200,23 +212,28 @@ float Planner::h(const Node &node) {
     const float dt = sqrtf(dx*dx + dy*dy)/max_velocity + abs(dw)/max_rotation;
     const float dz = map->atPosition("elevation", grid_map::Position(goal.x, goal.y)) -
                 map->atPosition("elevation", grid_map::Position(node.x, node.y));
-    return dg(dt, max_velocity, max_rotation, 0.0f, 0.0f, dz, 0.0f, 0.0f);
+    return dg(dt, max_velocity, max_rotation, 0.0f, 0.0f, dz, desired_temperature);
 }
 
 // G-score increment for a given sample
 float Planner::dg(const float dt, const float v, const float u, const float dv, const float du, 
-                    const float dz, const float T, const float dT) {
+                    const float dz, const float T) {
 
     const float direction_factor = v > 0 ? forward_factor : reverse_factor;
     const float potential_factor = dz > 0 ? uphill_factor : downhill_factor;
     const float accel_factor = dv > 0 ? acceleration_factor : decceleration_factor;
+
+    const float dT = T - desired_temperature;
+    const float temperature_factor = dT > 0 ? hot_factor : cool_factor;
 
     const float drag_energy = drag_force * abs(v) * dt * direction_factor;
     const float potential_energy = gravity_force * abs(dz) * potential_factor;
     const float kinetic_energy = body_mass * abs(v) * abs(dv) * accel_factor;
     const float rotation_energy = body_moment * abs(u) * abs(du) * rotational_factor;
 
-    return drag_energy + potential_energy + kinetic_energy + rotation_energy;
+    const float temperature_energy = abs(dT) * temperature_factor;
+
+    return drag_energy + potential_energy + kinetic_energy + rotation_energy + temperature_energy;
 }
 
 // Sampling
@@ -230,6 +247,7 @@ int Planner::sample(const Node& node, const int n) {
     float y = node.y;
     float w = node.w;
     float g = node.g;
+    float T = node.T;
 
     // Get sample velocity and rotation
     const float v = velocities[n];
@@ -258,16 +276,17 @@ int Planner::sample(const Node& node, const int n) {
 
     const float z0 = map->atPosition("elevation", position0);
     const float z1 = map->atPosition("elevation", position);
-    const float T0 = map->atPosition("temperature", position0);
-    const float T1 = map->atPosition("temperature", position);
+    const float T_gnd = solar_temperature * (1 - map->atPosition("temperature", position));
 
-    g += dg(sample_time, v, u, v - node.v, u - node.u, z1 - z0, T1, T1 - T0);
+    T += heat_transfer * (powf(T_gnd, 4.0f) - powf(T, 4.0f)) * sample_time;
+
+    g += dg(sample_time, v, u, v - node.v, u - node.u, z1 - z0, T);
 
     // Calculate node index (valid response)
     const int res = high + n + 1;
 
     // Copy into buffer
-    buffer[res] = {x, y, w, v, u, g, 0.0f, res, node.i, node.t+1};
+    buffer[res] = {x, y, w, v, u, g, 0.0f, res, node.i, node.t + sample_time, node.G+1, T};
 
     // Calculate F score
     buffer[res].f = g + h(buffer[res]);

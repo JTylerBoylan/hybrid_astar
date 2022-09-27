@@ -47,7 +47,9 @@ namespace planner {
                 float v, u;     // Velocity
                 float g, f;     // Heuristic
                 int i, p;       // Index
-                int t;          // Generation
+                float t;        // Time
+                int G;          // Generation
+                float T;        // Temperature
             };
 
             // H-score for a given node
@@ -55,7 +57,7 @@ namespace planner {
 
             // G-score increment for a given sample
             float dg(const float dt, const float v, const float u, const float dv, const float du, 
-                const float dz, const float T, const float dT);
+                const float dz, const float T);
 
             // Sampling
             int sample(const Node& node, const int n);
@@ -81,25 +83,39 @@ namespace planner {
             // Parameters
             int max_iterations;
             int max_generations;
+
             int sample_size;
             std::vector<float> velocities;
             std::vector<float> rotations;
             float max_velocity;
             float max_rotation;
+
             float goal_radius;
+
             float sample_time;
             float sample_time_increment;
-            float body_mass;
-            float body_moment;
+
             float drag_force;
             float forward_factor;
             float reverse_factor;
+
             float gravity_force;
             float uphill_factor;
             float downhill_factor;
+
+            float body_mass;
+            float body_moment;
             float acceleration_factor;
             float decceleration_factor;
             float rotational_factor;
+
+            float heat_transfer;
+            float hot_factor;
+            float cool_factor;
+            float desired_temperature;
+            float initial_temperature;
+
+            float solar_temperature;
             
 
     };

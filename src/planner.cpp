@@ -7,7 +7,7 @@ using namespace Eigen;
 Planner::Planner() {
 
     // Set parameters
-    max_iterations = 100000;
+    max_iterations = 100000; // 156 MB per million iterations @ 3 samples / iteration (B = 52*S*I)
     max_generations = 100;
     sample_size = 3;
 
@@ -274,12 +274,17 @@ int Planner::sample(const Node& node, const int n) {
     if (w > M_PI || w <= -M_PI)
         w += w > M_PI ? -2.0*M_PI : 2.0*M_PI;
 
+    // Get elevation data from map
     const float z0 = map->atPosition("elevation", position0);
     const float z1 = map->atPosition("elevation", position);
+
+    // EDIT THIS
     const float T_gnd = solar_temperature * (1 - map->atPosition("temperature", position));
 
+    // Increase body temperature
     T += heat_transfer * (powf(T_gnd, 4.0f) - powf(T, 4.0f)) * sample_time;
 
+    // Increase g score
     g += dg(sample_time, v, u, v - node.v, u - node.u, z1 - z0, T);
 
     // Calculate node index (valid response)

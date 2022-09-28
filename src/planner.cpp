@@ -324,8 +324,6 @@ Pose Planner::toPose(const Node& node) {
     const double sin_w2 = sin(w / 2.0);
     const double cos_w2 = cos(w / 2.0);
 
-    ROS_INFO("[%i] %.4f", node.i, normal.z());
-
     geometry_msgs::Pose p;
     p.position.x = x;
     p.position.y = y;

@@ -38,7 +38,7 @@ Planner::Planner() {
     decceleration_factor = 0.25;
     rotational_factor = 1.0;
 
-    heat_transfer = 1e-9f;
+    heat_transfer = 5e-10f;
 
     hot_factor = 0.0f;
     cool_factor = 100.0f;
@@ -157,7 +157,7 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
     // Reverse so path is ordered start -> best
     std::reverse(path.begin(),path.end());
 
-    // Print path
+    // Print path389.65
     ROS_INFO("--- PATH ---");
     for (int idx : path) {
         const Node node = buffer[idx];
@@ -281,8 +281,11 @@ int Planner::sample(const Node& node, const int n) {
     const float z1 = map->atPosition("elevation", position);
 
     // Get temperature from map
+    // T_K = a*T_map^2 + b*T_map + c
     const float T_map = map->atPosition("temperature", position);
     const float T_K = map2temp_a * powf(T_map, 2.0f) + map2temp_b * T_map + map2temp_c;
+
+    // m*c*dT/dt = e*o*A*(Ts^4 - T^4) --> dT = (e*o*A)/(m*c) * (Ts^4 - T^4) * dt
 
     // Increase body temperature
     T += heat_transfer * (powf(T_K, 4.0f) - powf(T, 4.0f)) * sample_time;

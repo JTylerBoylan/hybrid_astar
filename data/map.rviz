@@ -3,8 +3,7 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded:
-        - /GridMap1
+      Expanded: ~
       Splitter Ratio: 0.5
     Tree Height: 839
   - Class: rviz/Selection
@@ -116,7 +115,7 @@ Visualization Manager:
       Show Trail: false
       Value: true
     - Alpha: 1
-      Arrow Length: 0.30000001192092896
+      Arrow Length: 0.5
       Axes Length: 0.30000001192092896
       Axes Radius: 0.009999999776482582
       Class: rviz/PoseArray
@@ -160,7 +159,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 226.7218475341797
+      Distance: 200.43911743164062
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -176,9 +175,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6397964954376221
+      Pitch: 0.6597965955734253
       Target Frame: <Fixed Frame>
-      Yaw: 0.9803982973098755
+      Yaw: 0.45540091395378113
     Saved: ~
 Window Geometry:
   Displays:

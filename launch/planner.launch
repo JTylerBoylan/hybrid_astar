@@ -28,9 +28,9 @@
     <node name="goal_point" pkg="hybrid_astar" type="goal_point.py" output="screen">
         <param name="frame_id" value="map"/>
         <param name="goal_topic" value="/goal_point"/>
-        <param name="x" value="77"/>
+        <param name="x" value="65"/>
         <param name="y" value="65"/>
-        <param name="z" value="0"/>
+        <param name="z" value="20"/>
     </node>
 
     <node name="planner" pkg="hybrid_astar" type="planner" output="screen"> 

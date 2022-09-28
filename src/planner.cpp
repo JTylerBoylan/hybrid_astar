@@ -7,7 +7,7 @@ using namespace Eigen;
 Planner::Planner() {
 
     // Set parameters
-    max_iterations = 100000; // 156 MB per million iterations @ 3 samples / iteration (B = 52*S*I)
+    max_iterations = 1000000; // 156 MB per million iterations @ 3 samples / iteration (B = 52*S*I)
     max_generations = 100;
     sample_size = 3;
 
@@ -16,7 +16,7 @@ Planner::Planner() {
     max_velocity = 1.0;
     max_rotation = M_PI / 60.0;
 
-    goal_radius = 10.0; // m
+    goal_radius = 3.0; // m
 
     sample_time = 10.0; // s
     sample_time_increment = 1.0;
@@ -38,15 +38,17 @@ Planner::Planner() {
     decceleration_factor = 0.25;
     rotational_factor = 1.0;
 
-    heat_transfer = 1e-10f;
+    heat_transfer = 1e-9f;
 
-    hot_factor = 100.0;
-    cool_factor = 1000.0;
+    hot_factor = 0.0f;
+    cool_factor = 100.0f;
 
-    desired_temperature = 300;
-    initial_temperature = 300;
+    desired_temperature = 300.0f;
+    initial_temperature = 350.0f;
 
-    solar_temperature = 400;
+    map2temp_a = -520.0f;
+    map2temp_b = 26.0f;
+    map2temp_c = 400;
 
     // Create buffer
     buffer = new Node[max_iterations*sample_size + 1];
@@ -120,7 +122,7 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
             break;
 
         // Generation check
-        if (node.G > max_generations)
+        if (node.G >= max_generations)
             break;
 
         // Run sampling
@@ -131,7 +133,7 @@ void Planner::run(const grid_map::GridMap &map, const Odometry &odom, const Poin
         }
 
         // Update highest node
-        high = (iter+1)*sample_size;
+        high += sample_size;
 
         // Check if any nodes left
         if (queue.empty())
@@ -278,11 +280,12 @@ int Planner::sample(const Node& node, const int n) {
     const float z0 = map->atPosition("elevation", position0);
     const float z1 = map->atPosition("elevation", position);
 
-    // EDIT THIS
-    const float T_gnd = solar_temperature * (1 - map->atPosition("temperature", position));
+    // Get temperature from map
+    const float T_map = map->atPosition("temperature", position);
+    const float T_K = map2temp_a * powf(T_map, 2.0f) + map2temp_b * T_map + map2temp_c;
 
     // Increase body temperature
-    T += heat_transfer * (powf(T_gnd, 4.0f) - powf(T, 4.0f)) * sample_time;
+    T += heat_transfer * (powf(T_K, 4.0f) - powf(T, 4.0f)) * sample_time;
 
     // Increase g score
     g += dg(sample_time, v, u, v - node.v, u - node.u, z1 - z0, T);
@@ -300,18 +303,37 @@ int Planner::sample(const Node& node, const int n) {
 }
 
 Pose Planner::toPose(const Node& node) {
-    geometry_msgs::Pose p;
-    const grid_map::Position pos(node.x, node.y);
-    
-    p.position.x = node.x;
-    p.position.y = node.y;
-    p.position.z = map->atPosition("elevation", pos) + 2.0;
 
-    const double sin_w2 = sin(node.w / 2.0);
-    p.orientation.x = 0.0;
-    p.orientation.y = 0.0;
-    p.orientation.z = sin_w2;
-    p.orientation.w = cos(node.w / 2.0);
+    const float x = node.x;
+    const float y = node.y;
+    const float w = node.w;
+
+    const grid_map::Position pos(x, y);
+    const float z = map->atPosition("elevation", pos);
+
+    Vector3d forward(2.0 * cos(w), 2.0 * sin(w), 0.0);
+    const grid_map::Position fwd(x + forward.x(), y + forward.y());
+    forward.z() = map->isInside(fwd) ? map->atPosition("elevation", fwd) - z : 0.0;
+
+    Vector3d lateral(2.0 * cos(w + M_PI_2), 2.0 * sin(w + M_PI_2), 0.0);
+    const grid_map::Position lat(x + lateral.x(), y + lateral.y());
+    lateral.z() = map->isInside(lat) ? map->atPosition("elevation", lat) - z : 0.0;
+
+    Vector3d normal = forward.cross(lateral).normalized();
+
+    const double sin_w2 = sin(w / 2.0);
+    const double cos_w2 = cos(w / 2.0);
+
+    ROS_INFO("[%i] %.4f", node.i, normal.z());
+
+    geometry_msgs::Pose p;
+    p.position.x = x;
+    p.position.y = y;
+    p.position.z = z;
+    p.orientation.x = normal.x() * sin_w2;
+    p.orientation.y = normal.y() * sin_w2;
+    p.orientation.z = normal.z() * sin_w2;
+    p.orientation.w = cos_w2;
 
     return p;
 }

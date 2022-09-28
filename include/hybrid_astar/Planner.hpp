@@ -115,7 +115,7 @@ namespace planner {
             float desired_temperature;
             float initial_temperature;
 
-            float solar_temperature;
+            float map2temp_a, map2temp_b, map2temp_c;
             
 
     };
